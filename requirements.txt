@@ -1,0 +1,4 @@
+aiogram>=3.25,<4
+shazamio==0.8.1
+yt-dlp[default]>=2026.6.9
+ytmusicapi>=1.11,<2
