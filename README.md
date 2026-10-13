@@ -1,39 +1,42 @@
-# Telegram-бот для поиска и распознавания музыки
+# Shazam Telegram Bot
 
-Самостоятельная реализация по двум скриншотам и проверке живого диалога с @shazam_userbot в Telegram Web. Исходники и база оригинального сервиса недоступны; полное совпадение не подтверждено.
+A Telegram bot for finding songs, recognizing music and downloading public audio and video. Send a song title, an artist, a voice message or a video link, and the bot handles the search and media processing.
 
-## Возможности
+Built with Python and aiogram, with YouTube Music for search, ShazamIO for recognition and FFmpeg for audio processing.
 
-- Приветствие с тем же текстом и обычными Unicode-эмодзи.
-- Поиск через YouTube Music: название, исполнитель, фраза из песни.
-- До 12 треков в первом сообщении: название, исполнитель, доступная длительность.
-- Зелёная кнопка «➕ Больше треков» присылает новое сообщение с 10 дополнительными результатами. Старые кнопки остаются доступны.
-- Выбор трека отправляет MP3 с исполнителем, названием, ссылкой info на song.link, ссылкой запуска бота с этим треком и кнопкой «🔤 Текст песни».
-- Текст берётся из YouTube Music с резервным поиском LRCLIB. После запроса кнопка текста убирается; есть ответ «Для этого трека лирика недоступна».
-- Кнопка «🔍» открывает инлайн-поиск; кнопка поиска по исполнителю подставляет его имя.
-- Публичная ссылка → скачанное видео → «🎵 Распознать музыку 🎵» → подпись с найденной песней, Google / YouTube Music / Spotify и выдача аудио.
-- Для TikTok предусмотрено автоматическое распознавание, как в наблюдаемом примере.
-- «❌ Неправильная песня ❌» убирается после нажатия и присылает альтернативные результаты поиска.
-- Принимаются голосовые, аудио, видео и видеосообщения. Временные файлы удаляются.
-- Аудио кэшируется через Telegram file_id; повторный выбор не скачивает его заново.
-- /cancel отменяет текущее действие и ожидание ввода; /id помогает настроить администратора; /privacy описывает обработку данных.
+## Features
 
-## Админ-панель новой реализации
+- **Music search:** look up tracks by title, artist or a phrase from a song.
+- **Audio delivery:** select a result to receive an MP3 with track metadata and a song.link URL.
+- **Music recognition:** identify music in voice messages, audio files, videos and video messages.
+- **Video downloads:** download a public video and recognize its soundtrack.
+- **Lyrics:** retrieve lyrics from YouTube Music, with LRCLIB as a fallback.
+- **Inline search:** find tracks from the message field in any chat where inline bots are available.
+- **Audio caching:** reuse Telegram file IDs instead of downloading the same track repeatedly.
+- **Search pagination:** keep earlier results available while loading more tracks.
+- **Admin tools:** manage the welcome message, view statistics, prepare broadcasts and track referral links.
 
-Администраторы задаются только в ADMIN_IDS; первый пользователь не становится администратором автоматически.
+The first search response contains up to 12 tracks. Additional pages contain up to 10 results each.
 
-- /admin: меню.
-- /statistics: участники, группы и каналы, известные этому боту.
-- /set_start_msg: сохранение нового текстового приветствия.
-- /set_inline: локальное включение/выключение инлайн-поиска. Первичное включение Telegram выполняется у @BotFather.
-- /broadcast: подготовка сообщения, предпросмотр, число получателей и отдельное подтверждение отправки. В этом сеансе рассылки не отправлялись.
-- /referral_system_menu: создание ссылки, отключение, статистика одной и всех ссылок. Считаются новые пользователи с первым реферальным запуском.
+## Requirements
 
-Настройки, пользователи, реферальная статистика и Telegram file_id хранятся в SQLite. Поиски с кнопками — в памяти до часа. Исходная база пользователей оригинального бота сюда не перенесена.
+- Python 3.11 or 3.12
+- FFmpeg, with both `ffmpeg` and `ffprobe` available on `PATH`
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- Internet access to Telegram and the external music services
 
-## Запуск на Windows
+Python 3.13 and later have not been verified with the pinned ShazamIO version.
 
-Нужны Python 3.11 или 3.12 и FFmpeg: ffmpeg и ffprobe в PATH. Python 3.13+ с закреплённой версией ShazamIO здесь не проверялся.
+## Quick start
+
+Clone the repository:
+
+```sh
+git clone https://github.com/SheraInf/shazam-telegram-bot.git
+cd shazam-telegram-bot
+```
+
+### Windows
 
 ```powershell
 python -m venv .venv
@@ -43,50 +46,147 @@ notepad .env
 .\.venv\Scripts\python.exe bot.py
 ```
 
-В .env вставь токен своего бота от [@BotFather](https://t.me/BotFather). Токен в чат не присылай. Переменные окружения имеют приоритет над .env.
+### Linux / macOS
 
-После первого запуска отправь /id, внеси свой числовой ID в ADMIN_IDS и перезапусти процесс. Несколько ID разделяются запятыми.
+Install FFmpeg using your system's package manager, then:
 
-Для инлайн-режима включи /setinline у @BotFather. Уже кэшированные треки отправляются сразу. Для превращения ещё не кэшированного результата в аудио:
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
+# Edit .env before starting the bot.
+python bot.py
+```
 
-1. Включи /setinlinefeedback → 100% у @BotFather.
-2. Укажи INLINE_CACHE_CHAT_ID: свой служебный чат, куда новый бот может отправлять выбранные аудиозаписи. Сначала запусти бота в этом чате; для канала дай право публикации.
-3. Результат сначала появляется как текст, затем заменяется на аудио после загрузки.
+Set `BOT_TOKEN` in `.env`. Keep this file private.
 
-Без INLINE_CACHE_CHAT_ID новые инлайн-результаты содержат ссылку на выдачу в личном диалоге с ботом. Это отличается от немедленной выдачи аудио оригинальным сервисом.
+The bot uses long polling. Run one instance per token and remove any existing webhook before starting it.
 
-Проверки: `python -m unittest discover -s tests -v`.
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `BOT_TOKEN` | Telegram bot token; required |
+| `ADMIN_IDS` | Comma-separated Telegram user IDs allowed to use admin commands |
+| `INLINE_CACHE_CHAT_ID` | Optional storage chat for audio selected through inline search |
+| `DB_PATH` | Optional SQLite path; defaults to `bot.sqlite3` next to `bot.py` |
+
+Environment variables take precedence over values in `.env`.
+
+To configure an administrator, start the bot, send `/id`, add your user ID to `ADMIN_IDS`, and restart the process. Admin access is never assigned automatically to the first user.
+
+## Using the bot
+
+Send one of the following:
+
+- A song title or artist name.
+- A text phrase to search through YouTube Music.
+- A voice message or audio recording containing music.
+- A video or video message.
+- A supported public HTTPS video link.
+
+Text searches return a list of tracks. Selecting a track sends its audio file, and the lyrics button retrieves the available text.
+
+Video links return a downloaded video with a recognition action. A successful match adds the song title, artist and links to external music searches. TikTok links also attempt automatic recognition.
+
+Supported link domains include YouTube, Instagram, TikTok, VK, SoundCloud, Vimeo and Dailymotion. Availability depends on the source site.
+
+## Inline search
+
+Enable inline mode with `/setinline` in @BotFather. Then type:
+
+```text
+@your_bot_username song title
+```
+
+Cached tracks can be sent directly as audio.
+
+For uncached tracks to become audio after selection:
+
+1. Enable `/setinlinefeedback` and set it to `100%` in @BotFather.
+2. Set `INLINE_CACHE_CHAT_ID` to a storage chat where the bot can send messages.
+3. Start the bot in that chat, or grant posting permission if using a channel.
+
+The selected result initially appears as text and is replaced with audio after download. Without a storage chat, uncached results provide a link to retrieve the track in the bot's private conversation.
+
+## Commands
+
+| Command | Action |
+| --- | --- |
+| `/start` | Show the welcome message or open a shared media link |
+| `/cancel` | Cancel the current operation or pending admin input |
+| `/id` | Show your user ID and the current chat ID |
+| `/privacy` | Explain data processing |
+| `/admin` | Open the admin menu |
+| `/statistics` | Show known participants and group counts |
+| `/set_start_msg` | Update the welcome message |
+| `/set_inline` | Enable or disable inline search within the application |
+| `/broadcast` | Prepare a message, preview it and confirm delivery |
+| `/referral_system_menu` | Create, disable and inspect referral links |
+
+Administrator commands require an ID listed in `ADMIN_IDS`. Broadcasts require a separate confirmation after preview.
+
+## Storage and processing
+
+SQLite stores application settings, user and chat IDs, referral attribution and cached Telegram media IDs. Referral statistics count a user's first registration through an active referral link.
+
+Search sessions are kept in memory for approximately one hour, with a maximum of 500 sessions. Search buttons expire after a restart; cached media and shared media links remain in SQLite.
+
+Temporary media files are removed after processing. Recognition analyzes the first 12 seconds, so trim a recording if the music starts later.
 
 ## Docker
 
 ```sh
 docker build -t music-bot .
 docker volume create music-bot-data
-docker run --rm --env-file .env -e DB_PATH=/data/bot.sqlite3 -v music-bot-data:/data music-bot
+docker run --rm --env-file .env \
+  -e DB_PATH=/data/bot.sqlite3 \
+  -v music-bot-data:/data \
+  music-bot
 ```
 
-Один процесс на токен, постоянный доступ в интернет. Перед polling отключи существующий webhook, если он настроен. Docker-сборка в этом сеансе не проверялась.
+The volume preserves the database between container runs. The Docker configuration is included, but the image build has not been verified.
 
-## Что проверено
+## Tests
 
-- Установлены aiogram 3.31.0, ShazamIO 0.8.1, yt-dlp 2026.8.19, ytmusicapi 1.12.3 в отдельном тестовом окружении.
-- 25 автоматических тестов: ссылки, кнопки, пагинация, данные YouTube Music, кэш, ошибки, админ-доступ, предпросмотр рассылки, рефералы, отмена и обработчики инлайн-режима. Для тестов временная папка песочницы перенаправлена внутрь рабочего каталога.
-- Живые запросы новой реализации без Telegram-токена: поиск six days, скачивание MP3 (3 721 389 байт), успешное распознавание Shazam, доступный текст песни, скачивание MP4 (10 219 735 байт).
-- Оригинальный бот изучен через разрешённые тестовые запросы в Telegram Web. Личные скриншоты и журнал диалога не публикуются.
+```sh
+python -m unittest discover -s tests -v
+```
 
-## Непроверенные отличия и пределы
+The suite contains 25 tests covering URL validation, keyboards, callbacks, caching, admin access, referral attribution, cancellation and inline handlers.
 
-- Новая реализация ещё не запущена под Telegram-токеном: сквозная отправка сообщений, инлайн-замена медиа, рассылки и весь админ-интерфейс требуют проверки после настройки.
-- Совпадение базы, порядка, качества аудио и всех внутренних алгоритмов оригинала не гарантируется. Первый результат six days совпал по YouTube ID. Неизвестные сценарии воссозданы самостоятельно.
-- Лупа — обычный эмодзи; специальные эмодзи и анимации не извлекались. Цвета и обрезка кнопок зависят от клиента Telegram.
-- В первой странице доступны до 12 результатов, в последующих до 10. Результаты могут повторяться между смешанным поиском и поиском песен, как в наблюдаемом оригинале.
-- Фразы из песен ищутся обычным текстовым поиском YouTube Music; отдельного индекса всех текстов нет.
-- Входящие файлы — до 20 МБ. Исходящие аудио и видео — до 49 МБ; скачиваемые публикации до 20 минут. Распознаются первые 12 секунд.
-- TikTok и остальные сторонние сайты доступны в коде, но живое скачивание проверено только на YouTube. Приватные, возрастные и регионально ограниченные публикации не поддерживаются; cookies не используются.
-- После перезапуска старые поисковые кнопки устаревают. Ссылки на выданное аудио/видео и кэш сохраняются в SQLite.
-- В реализации до 3 параллельных операций, до 6 занятых пользователей. При отмене сетевой поиск в фоновом потоке может завершаться до истечения тайм-аута.
-- Для публичного развёртывания нужны ограничения исходящего доступа к локальным/служебным адресам: загрузчики следуют перенаправлениям сторонних сайтов. Устанавливай актуальные зависимости.
+Separate live service checks have covered music search, MP3 and MP4 downloads, lyrics retrieval and Shazam recognition. Complete Telegram workflows, including inline media replacement and broadcasts, still need end-to-end verification in the deployment environment.
 
-Используй скачивание материалов, на которые у тебя есть разрешение. Текст поиска, медиа и метаданные обрабатываются соответствующими сторонними сервисами; /privacy описывает это пользователям.
+## Project structure
 
-Документация: [Telegram](https://core.telegram.org/bots/api), [ShazamIO](https://github.com/shazamio/ShazamIO), [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://ytmusicapi.readthedocs.io/), [LRCLIB](https://lrclib.net/docs).
+```text
+bot.py             Message handlers, search, recognition and media delivery
+core.py            Validation and keyboard construction
+admin.py           Admin commands, broadcasts and referral management
+store.py           SQLite persistence
+tests/             Unit and handler tests
+requirements.txt   Python dependencies
+.env.example       Configuration template
+Dockerfile         Container setup
+```
+
+## Current limits
+
+- Incoming files: up to 20 MB.
+- Outgoing audio and video: up to 49 MB.
+- Downloaded publications: up to 20 minutes.
+- Up to three concurrent operations and six users with active or queued work.
+- Private, age-restricted and region-restricted media are unsupported; browser cookies are not used.
+- Text phrases use YouTube Music search rather than a dedicated full-text lyrics index.
+- Live downloads have been checked on YouTube; other supported sites still need verification.
+- Search results may repeat between mixed search and song-only pages.
+- Cancelling a request may leave an underlying search thread running until its network timeout.
+
+External services can change their interfaces or restrict requests. Keep the dependencies updated. For public hosting, restrict outbound access to local and infrastructure addresses because media downloaders follow third-party redirects.
+
+Use downloads only for content you are permitted to access and save. Search queries, media and track metadata are processed by the relevant external services; `/privacy` describes this to users.
+
+## Main dependencies
+
+[aiogram](https://docs.aiogram.dev/) · [ytmusicapi](https://ytmusicapi.readthedocs.io/) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ShazamIO](https://github.com/shazamio/ShazamIO) · [FFmpeg](https://ffmpeg.org/) · [LRCLIB](https://lrclib.net/docs)
