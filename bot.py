@@ -235,7 +235,7 @@ async def start(message: Message):
                 {'text':'🎵 Распознать музыку 🎵','callback_data':f'recognize:{payload[9:]}:0'}]]})
             return
     if payload.startswith('ref_'):
-        db.touch(message.chat.id, message.chat.type.value, message.from_user.id, payload[4:])
+        db.touch(message.chat.id, message.chat.type, message.from_user.id, payload[4:])
     await message.answer(db.get('welcome', WELCOME))
     if admin.allowed(message):
         await message.answer('/admin — доступные команды администратора')
@@ -466,6 +466,17 @@ async def unsupported(message: Message):
     await message.answer("Пришли название, слова песни, аудио, видео или ссылку 🎶")
 
 
+async def track_chat(handler, event, data):
+    if isinstance(event,Message):
+        # /start records the first referral before any ordinary registration.
+        ref = None
+        payload = (event.text or '').partition(' ')[2]
+        if payload.startswith('ref_') and (event.text or '').startswith('/start'):
+            ref = payload[4:]
+        db.touch(event.chat.id,event.chat.type,event.from_user.id if event.from_user else None,ref)
+    return await handler(event,data)
+
+
 async def main():
     global db, username
     load_env()
@@ -481,15 +492,6 @@ async def main():
     app = Dispatcher()
     app.include_router(admin.router)
     app.include_router(dp)
-    async def track_chat(handler, event, data):
-        if isinstance(event,Message):
-            # /start records the first referral before any ordinary registration.
-            ref = None
-            payload = (event.text or '').partition(' ')[2]
-            if payload.startswith('ref_') and (event.text or '').startswith('/start'):
-                ref = payload[4:]
-            db.touch(event.chat.id,event.chat.type.value,event.from_user.id if event.from_user else None,ref)
-        return await handler(event,data)
     app.message.outer_middleware(track_chat)
     async def cleanup():
         while True:

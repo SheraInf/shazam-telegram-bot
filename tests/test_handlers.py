@@ -1,7 +1,7 @@
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
-from aiogram.types import Message, InlineKeyboardMarkup
+from aiogram.types import Message, InlineKeyboardMarkup, Chat
 import bot
 import admin
 import os
@@ -46,6 +46,24 @@ class HandlerTests(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self.db_patch.stop()
         self.store.db.close()
+
+    async def test_referral_start_accepts_real_chat_type(self):
+        m = message()
+        m.chat = Chat(id=1,type='private')
+        m.text = '/start ref_campaign'
+        self.store.ref('campaign','Campaign')
+        await bot.start(m)
+        self.assertEqual(self.store.stats(),(1,0))
+        self.assertEqual(self.store.refs()[0][3],1)
+
+    async def test_middleware_accepts_real_chat_types(self):
+        for chat_id,kind in [(1,'private'),(-100,'supergroup')]:
+            event = Message.model_validate({'message_id':1,'date':0,'chat':{'id':chat_id,'type':kind},
+                'from':{'id':1,'is_bot':False,'first_name':'Test'},'text':'hello'})
+            handler = AsyncMock(return_value='handled')
+            self.assertEqual(await bot.track_chat(handler,event,{}),'handled')
+            handler.assert_awaited_once_with(event,{})
+        self.assertEqual(self.store.stats(),(1,1))
 
     async def test_failed_operation_clears_busy_flag(self):
         m = message()
